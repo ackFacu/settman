@@ -58,12 +58,19 @@ func TestGetWithoutEnv(t *testing.T) {
 	maString := mandatoryString
 	maBoolean := mandatoryBoolean
 
+	//This are going to use default value
 	opUint.Parse()
 	opString.Parse()
 	opBoolean.Parse()
-	maUint.Parse()
-	maString.Parse()
-	maBoolean.Parse()
+	assertPanic(t, maUint.Parse)
+	assertPanic(t, maString.Parse)
+	assertPanic(t, maBoolean.Parse)
+
+	//Test parse with invalid types
+	os.Setenv("mandatoryUint", "100.0") //Expect uint but got float
+	os.Setenv("mandatoryBoolean", "1")  //Expect boolean but got a number
+	assertPanic(t, maUint.Parse)
+	assertPanic(t, maBoolean.Parse)
 
 	if opUint.Get().(uint8) != uint8(1) {
 		t.Error("Fail to get default value")
@@ -77,21 +84,6 @@ func TestGetWithoutEnv(t *testing.T) {
 
 	if opBoolean.Get().(bool) != true {
 		t.Error("Fail to get default value")
-		t.Fail()
-	}
-
-	if maUint.Get() != nil {
-		t.Error("Fail to create new mandatory setting")
-		t.Fail()
-	}
-
-	if maString.Get() != nil {
-		t.Error("Fail to create new mandatory setting")
-		t.Fail()
-	}
-
-	if maBoolean.Get() != nil {
-		t.Error("Fail to create new mandatory setting")
 		t.Fail()
 	}
 }
@@ -148,4 +140,14 @@ func TestGetWithEnv(t *testing.T) {
 		t.Error("Fail to get value from .env for mandatory setting boolean")
 		t.Fail()
 	}
+}
+
+func assertPanic(t *testing.T, f func()) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("Expected panic but it was not thrown")
+			t.Fail()
+		}
+	}()
+	f()
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"sync"
 )
 
 // Allowed types for settings
@@ -31,9 +32,11 @@ var (
 )
 
 type setting struct {
-	name     string
-	dataType reflect.Type
-	value    interface{}
+	name         string
+	dataType     reflect.Type
+	defaultValue interface{}
+	value        interface{}
+	m            sync.RWMutex
 }
 
 // If you do not specify a defaultValue, you make this a mandatory setting
@@ -43,38 +46,64 @@ func NewSetting(name string, dataType reflect.Type, defaultValue interface{}) (*
 	}
 
 	return &setting{
-		name:     name,
-		dataType: dataType,
-		value:    defaultValue,
+		name:         name,
+		dataType:     dataType,
+		defaultValue: defaultValue,
+		value:        defaultValue,
 	}, nil
 }
 
 // Get a value setting, or his default
-func (s setting) Get() interface{} {
+// It is safe to guess that this is always going to return a valid value, safe to convert to expected type, if the setting has been parsed
+func (s *setting) Get() interface{} {
+	s.m.RLock()
+	defer s.m.RUnlock()
+
 	return s.value
 }
 
-func (s *setting) Parse() error {
+// Set value for a setting. Internal use only
+func (s *setting) set(v interface{}) {
+	s.m.Lock()
+	defer s.m.Unlock()
+
+	s.value = v
+}
+
+func (s *setting) Parse() {
+	defer s.checkConsistency()
+
 	//Get value from env
 	val := os.Getenv(s.name)
+
+	//No env value set, use default
 	if len(val) == 0 {
-		return nil
+		s.set(s.defaultValue)
+		return
 	}
 
-	//No need to unmarshall for strings
+	//No need to unmarshall for string type
 	if s.dataType == String {
-		s.value = val
-		return nil
+		s.set(val)
+		return
 	}
 
 	// Unmarshall into a new object of needed type
 	zero := reflect.New(s.dataType)
-	err := json.Unmarshal([]byte(val), zero.Interface())
-	if err != nil {
-		return err
+	if nil == json.Unmarshal([]byte(val), zero.Interface()) {
+		//Convert from <interface *type> to <interface type>
+		s.set(zero.Elem().Addr().Elem().Interface())
+	} else {
+		// invalid type provided on environment variable, unable to unmarshall. Use default
+		s.set(s.defaultValue)
 	}
 
-	//Convert from <interface *type> to <interface type>
-	s.value = zero.Elem().Addr().Elem().Interface()
-	return nil
+	return
+}
+
+// Check for valid value set on setting - This is only going to panic if mandatory setting is missing or invalid
+func (s *setting) checkConsistency() {
+	if s.Get() == nil || reflect.TypeOf(s.Get()) != s.dataType {
+		panic(fmt.Errorf("mandatory setting is missing or invalid type: %s", s.name))
+	}
 }
