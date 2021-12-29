@@ -40,9 +40,10 @@ type setting struct {
 }
 
 // If you do not specify a defaultValue, you make this a mandatory setting
-func NewSetting(name string, dataType reflect.Type, defaultValue interface{}) (*setting, error) {
+func NewSetting(name string, dataType reflect.Type, defaultValue interface{}) *setting {
 	if defaultValue != nil && reflect.TypeOf(defaultValue) != dataType {
-		return nil, fmt.Errorf("Default value for setting can't have a different type than dataType")
+		panic(fmt.Errorf("default value for setting %s has a diferent type than the one configured", name))
+		return nil
 	}
 
 	return &setting{
@@ -50,7 +51,7 @@ func NewSetting(name string, dataType reflect.Type, defaultValue interface{}) (*
 		dataType:     dataType,
 		defaultValue: defaultValue,
 		value:        defaultValue,
-	}, nil
+	}
 }
 
 // Get a value setting, or his default
