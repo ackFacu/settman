@@ -10,37 +10,37 @@ var optionalString, mandatoryString *setting
 var optionalBoolean, mandatoryBoolean *setting
 
 func TestMain(m *testing.M) {
-	optionalUint, _ = NewSetting(
+	optionalUint = NewSetting(
 		"optionalUint",
 		Uint8,
 		uint8(1),
 	)
 
-	optionalString, _ = NewSetting(
+	optionalString = NewSetting(
 		"optionalString",
 		String,
 		"HolaTest",
 	)
 
-	optionalBoolean, _ = NewSetting(
+	optionalBoolean = NewSetting(
 		"optionalBoolean",
 		Boolean,
 		true,
 	)
 
-	mandatoryUint, _ = NewSetting(
+	mandatoryUint = NewSetting(
 		"mandatoryUint",
 		Uint8,
 		nil,
 	)
 
-	mandatoryString, _ = NewSetting(
+	mandatoryString = NewSetting(
 		"mandatoryString",
 		String,
 		nil,
 	)
 
-	mandatoryBoolean, _ = NewSetting(
+	mandatoryBoolean = NewSetting(
 		"mandatoryBoolean",
 		Boolean,
 		nil,
