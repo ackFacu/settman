@@ -59,18 +59,49 @@ func TestGetWithoutEnv(t *testing.T) {
 	maBoolean := mandatoryBoolean
 
 	//This are going to use default value
-	opUint.Parse()
-	opString.Parse()
-	opBoolean.Parse()
-	assertPanic(t, maUint.Parse)
-	assertPanic(t, maString.Parse)
-	assertPanic(t, maBoolean.Parse)
+	if nil != opUint.Parse() {
+		t.Error("Parse on opUint expected to succeed but failed")
+		t.Fail()
+	}
+
+	if nil != opString.Parse() {
+		t.Error("Parse on opString expected to succeed but failed")
+		t.Fail()
+	}
+
+	if nil != opBoolean.Parse() {
+		t.Error("Parse on opBoolean expected to succeed but failed")
+		t.Fail()
+	}
+
+	if nil == maUint.Parse() {
+		t.Error("Parse on maUint expected to fail but succeeded")
+		t.Fail()
+	}
+
+	if nil == maString.Parse() {
+		t.Error("Parse on maString expected to fail but succeeded")
+		t.Fail()
+	}
+
+	if nil == maBoolean.Parse() {
+		t.Error("Parse on maBoolean expected to fail but succeeded")
+		t.Fail()
+	}
 
 	//Test parse with invalid types
-	os.Setenv("mandatoryUint", "100.0") //Expect uint but got float
-	os.Setenv("mandatoryBoolean", "1")  //Expect boolean but got a number
-	assertPanic(t, maUint.Parse)
-	assertPanic(t, maBoolean.Parse)
+	_ = os.Setenv("mandatoryUint", "100.0") //Expect uint but got float
+	_ = os.Setenv("mandatoryBoolean", "1")  //Expect boolean but got a number
+
+	if nil == maUint.Parse() {
+		t.Error("Parse on maUint expected to fail but succeeded")
+		t.Fail()
+	}
+
+	if nil == maBoolean.Parse() {
+		t.Error("Parse on maBoolean expected to fail but succeeded")
+		t.Fail()
+	}
 
 	if opUint.Get().(uint8) != uint8(1) {
 		t.Error("Fail to get default value")
@@ -140,14 +171,4 @@ func TestGetWithEnv(t *testing.T) {
 		t.Error("Fail to get value from .env for mandatory setting boolean")
 		t.Fail()
 	}
-}
-
-func assertPanic(t *testing.T, f func()) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("Expected panic but it was not thrown")
-			t.Fail()
-		}
-	}()
-	f()
 }

@@ -71,9 +71,12 @@ func (s *setting) set(v interface{}) {
 	s.value = v
 }
 
-func (s *setting) Parse() {
-	defer s.checkConsistency()
+func (s *setting) Parse() error {
+	s.parse()
+	return s.checkConsistency()
+}
 
+func (s *setting) parse() {
 	//Get value from env
 	val := os.Getenv(s.name)
 
@@ -98,13 +101,13 @@ func (s *setting) Parse() {
 		// invalid type provided on environment variable, unable to unmarshall. Use default
 		s.set(s.defaultValue)
 	}
-
-	return
 }
 
 // Check for valid value set on setting - This is only going to panic if mandatory setting is missing or invalid
-func (s *setting) checkConsistency() {
+func (s *setting) checkConsistency() error {
 	if s.Get() == nil || reflect.TypeOf(s.Get()) != s.dataType {
-		panic(fmt.Errorf("mandatory setting is missing or invalid type: %s", s.name))
+		return fmt.Errorf("mandatory setting is missing or invalid type: %s", s.name)
 	}
+
+	return nil
 }
